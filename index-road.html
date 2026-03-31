@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Uppora — Платформа благодарности</title>
+  <meta name="description" content="Платформа QR-донатов для авторов. Комиссия 4,5%. Без регистрации для донатеров.">
+  <meta property="og:title" content="Uppora — QR-донаты для авторов">
+  <meta property="og:description" content="96% суммы — автору. Без подписок, без паспорта, без регистрации для донатера.">
+  <meta property="og:image" content="https://lebedevpmm.github.io/uppora-final-v1/assets/founder.jpg">
+  <meta property="og:type" content="website">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@300;500&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050505;
+      --accent: #52B868;
+      --accent-dim: #3D9E52;
+      --text: #F2F2F2;
+      --dim: #666;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; overflow-x: hidden; height: 600vh; }
+    canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+
+    .viewport-frame { position: fixed; inset: 0; border: 1px solid var(--border); pointer-events: none; z-index: 100; padding: 15px; }
+    .corner-label { position: absolute; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+    .cl-tl { top: 15px; left: 15px; }
+    .cl-tr { top: 15px; right: 15px; }
+    .cl-bl { bottom: 15px; left: 15px; }
+    .cl-br { bottom: 15px; right: 15px; }
+
+    .rearview-nav {
+      position: fixed; top: 40px; left: 50%; transform: translateX(-50%);
+      width: 280px; height: 50px; background: rgba(10, 10, 10, 0.8); border: 1px solid #333;
+      border-radius: 4px 4px 20px 20px; z-index: 101;
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 0 20px; backdrop-filter: blur(10px);
+    }
+    .nav-item { font-size: 10px; color: var(--dim); text-decoration: none; transition: color 0.3s; letter-spacing: 0.15em; }
+    .nav-item.active { color: var(--accent); }
+
+    .scanlines {
+      position: fixed; inset: 0;
+      background: linear-gradient(to bottom, rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%);
+      background-size: 100% 4px; z-index: 99; pointer-events: none; opacity: 0.25;
+    }
+
+    section {
+      position: relative; min-height: 100vh; width: 100%; z-index: 2;
+      padding: 40px 24px; display: flex; flex-direction: column; justify-content: center;
+    }
+
+    .hero-title {
+      font-family: 'Fraunces', serif; font-size: clamp(3rem, 10vw, 5rem);
+      line-height: 0.9; text-transform: uppercase;
+      color: transparent; -webkit-text-stroke: 1px var(--text); margin-bottom: 20px;
+    }
+    .hero-title span { display: block; color: var(--text); -webkit-text-stroke: 0; }
+    .description { max-width: 320px; font-size: 12px; line-height: 1.7; color: var(--dim); margin-top: 30px; }
+
+    .stats-row { display: flex; gap: 32px; margin-top: 40px; flex-wrap: wrap; }
+    .stat-value { font-family: 'Archivo Black', sans-serif; font-size: 28px; color: var(--accent); }
+    .stat-label { font-size: 9px; color: var(--dim); letter-spacing: 0.15em; margin-top: 4px; }
+
+    .scroll-hint { margin-top: 24px; display: flex; align-items: center; gap: 10px; }
+    .scroll-hint-line { width: 40px; height: 1px; background: var(--accent); }
+    .scroll-hint-text { font-size: 9px; color: var(--accent); letter-spacing: 0.2em; }
+
+    .dash-module {
+      background: rgba(20, 20, 20, 0.5); border: 1px solid var(--border);
+      padding: 24px; margin-top: 40vh; backdrop-filter: blur(8px); max-width: 500px;
+    }
+    .label-group { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .label-group span { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+    .dial-container { height: 200px; display: flex; align-items: flex-end; justify-content: space-between; gap: 3px; }
+    .bar { flex: 1; background: #1a1a1a; height: 20%; transition: height 0.3s, background 0.3s; }
+    .bar.active { background: var(--accent); }
+    .amount-display { font-family: 'Archivo Black', sans-serif; font-size: 48px; color: var(--accent); margin-top: 16px; }
+    .amount-sub { font-size: 10px; color: var(--dim); margin-top: 6px; }
+    .btn-confirm {
+      width: 100%; background: var(--text); color: var(--bg); border: none;
+      padding: 18px; font-family: 'JetBrains Mono', monospace; font-weight: bold;
+      text-transform: uppercase; letter-spacing: 0.2em; margin-top: 20px;
+      cursor: pointer; position: relative; font-size: 12px;
+    }
+    .btn-confirm::after { content: ""; position: absolute; inset: 2px; border: 1px solid var(--bg); }
+    .btn-confirm:hover { background: var(--accent); color: var(--bg); }
+
+    .breakdown { margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px; }
+    .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: var(--dim); }
+    .breakdown-row.total { color: var(--accent); font-weight: bold; border-top: 1px solid var(--accent); margin-top: 8px; padding-top: 12px; }
+
+    .info-section { max-width: 500px; }
+    .info-section h2 {
+      font-family: 'Fraunces', serif; font-size: clamp(1.8rem, 5vw, 2.5rem);
+      text-transform: uppercase; line-height: 1; margin-bottom: 16px;
+    }
+    .info-section h2 em { font-style: normal; color: var(--accent); }
+    .info-section p { font-size: 12px; line-height: 1.7; color: var(--dim); margin-bottom: 16px; }
+
+    .steps-list { margin-top: 24px; }
+    .step-row { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .step-num { font-family: 'Archivo Black', sans-serif; font-size: 24px; color: var(--accent); min-width: 40px; }
+    .step-content h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .step-content p { font-size: 11px; color: var(--dim); line-height: 1.5; }
+
+    .founder-block { display: flex; align-items: center; gap: 20px; }
+    .founder-photo { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 2px solid var(--accent); flex-shrink: 0; }
+    .founder-photo img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(0.3) contrast(1.1); }
+
+    .faq-list { max-width: 500px; margin-top: 24px; }
+    .faq-item { border-bottom: 1px solid var(--border); }
+    .faq-q {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 0; font-size: 12px; font-weight: 500; color: var(--text);
+      text-align: left; cursor: pointer; background: none; border: none;
+      font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
+    }
+    .faq-q:hover { color: var(--accent); }
+    .faq-q .chev { font-size: 14px; color: var(--dim); transition: transform 0.3s; }
+    .faq-item.open .chev { transform: rotate(180deg); color: var(--accent); }
+    .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+    .faq-item.open .faq-a { max-height: 500px; }
+    .faq-a p { font-size: 11px; color: var(--dim); line-height: 1.6; padding-bottom: 16px; }
+
+    .road-footer {
+      text-align: center; min-height: 50vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 2; position: relative;
+    }
+    .road-footer h3 { font-family: 'Fraunces', serif; font-size: 24px; color: var(--accent); }
+    .road-footer p { font-size: 9px; margin-top: 16px; color: var(--dim); letter-spacing: 0.2em; }
+    .road-footer a { color: var(--accent); text-decoration: none; font-size: 10px; margin-top: 12px; display: inline-block; letter-spacing: 0.15em; }
+
+    @media (prefers-reduced-motion: reduce) { .scanlines { display: none; } body { height: auto; } }
+  </style>
+</head>
+<body>
+
+<div class="scanlines" aria-hidden="true"></div>
+
+<div class="viewport-frame" aria-hidden="true">
+  <div class="corner-label cl-tl">REC ● ALPHA</div>
+  <div class="corner-label cl-tr">COMMISSION: 4.5%</div>
+  <div class="corner-label cl-bl">TAX: 0% NDFL // СТ.217 НК РФ</div>
+  <div class="corner-label cl-br">SYS: UPPORA_V1.0</div>
+</div>
+
+<nav class="rearview-nav" aria-label="Навигация">
+  <a href="#hero" class="nav-item active">ROAD</a>
+  <a href="#how" class="nav-item">HOW</a>
+  <a href="#gratitude" class="nav-item">FUEL</a>
+  <a href="#faq-section" class="nav-item">FAQ</a>
+</nav>
+
+<canvas id="road-canvas"></canvas>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="founder-block" style="margin-bottom:32px;">
+    <div class="founder-photo">
+      <img src="assets/founder.jpg" alt="Илья Панов" width="80" height="80">
+    </div>
+    <div>
+      <div style="font-size:13px;text-transform:uppercase;letter-spacing:1px;">Илья Панов</div>
+      <div style="font-size:10px;color:var(--dim);">Основатель Uppora</div>
+    </div>
+  </div>
+  <h1 class="hero-title">96%<br><span>автору</span></h1>
+  <p class="description">Платформа благодарности. QR-донаты без регистрации для донатеров. Комиссия 4,5%. Договор дарения — 0% НДФЛ.</p>
+  <div class="stats-row">
+    <div><div class="stat-value">4.5%</div><div class="stat-label">КОМИССИЯ</div></div>
+    <div><div class="stat-value">0%</div><div class="stat-label">НДФЛ</div></div>
+    <div><div class="stat-value">~мин</div><div class="stat-label">ВЫВОД</div></div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-hint-line"></div>
+    <span class="scroll-hint-text">SCROLL TO FUEL</span>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="how">
+  <div class="info-section">
+    <span style="font-size:9px;color:var(--accent);letter-spacing:0.3em;">01 / МАРШРУТ</span>
+    <h2 style="margin-top:12px;">КАК<br><em>РАБОТАЕТ</em></h2>
+    <div class="steps-list">
+      <div class="step-row"><div class="step-num">01</div><div class="step-content"><h4>Мы создаём страницу</h4><p>Только имя и карта для выплат. Без паспорта. Консьерж-онбординг за 2 минуты.</p></div></div>
+      <div class="step-row"><div class="step-num">02</div><div class="step-content"><h4>Делитесь ссылкой или QR</h4><p>В био, на столе в кофейне, на стикере. Один линк — все площадки.</p></div></div>
+      <div class="step-row"><div class="step-num">03</div><div class="step-content"><h4>Деньги в кабинете</h4><p>Донатер сканирует QR → вводит сумму → готово. Донат в кабинет, вывод на карту за минуты.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section id="pain">
+  <div class="info-section">
+    <span style="font-size:9px;color:var(--accent);letter-spacing:0.3em;">02 / БАРЬЕРЫ</span>
+    <h2 style="margin-top:12px;">ЧТО НЕ ТАК<br><em>С ДРУГИМИ</em></h2>
+    <div class="steps-list">
+      <div class="step-row"><div class="step-num" style="color:var(--dim);">×</div><div class="step-content"><h4>10–15% комиссии</h4><p>Типичная платформа забирает 10% + 3% эквайринг. Uppora: 4,5% всего.</p></div></div>
+      <div class="step-row"><div class="step-num" style="color:var(--dim);">×</div><div class="step-content"><h4>Регистрация для донатера</h4><p>Аккаунт, email, пароль. Половина уходит. Uppora: ноль регистрации.</p></div></div>
+      <div class="step-row"><div class="step-num" style="color:var(--dim);">×</div><div class="step-content"><h4>Подписки = обязательства</h4><p>Автор обязан выдавать, фан — продлевать. Uppora: разовые донаты.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DONATION DASHBOARD -->
+<section id="gratitude">
+  <div class="dash-module">
+    <div class="label-group"><span>FUEL_INJECTION_AMT</span><span>STATUS: IDLE</span></div>
+    <div class="dial-container" id="dial"></div>
+    <div class="amount-display"><span id="amount-val">100</span> ₽</div>
+    <p class="amount-sub">РАЗОВЫЙ ДОНАТ В ПОДДЕРЖКУ АВТОРА</p>
+    <div class="breakdown">
+      <div class="breakdown-row"><span>Автору</span><span id="bd-author">96 ₽</span></div>
+      <div class="breakdown-row"><span>Банку (3%)</span><span id="bd-bank">3 ₽</span></div>
+      <div class="breakdown-row"><span>Uppora (1.5%)</span><span id="bd-uppora">2 ₽</span></div>
+      <div class="breakdown-row total"><span>ИТОГО</span><span id="bd-total">100 ₽</span></div>
+    </div>
+    <a href="https://t.me/uppora_support" target="_blank" rel="noopener" style="text-decoration:none;display:block;">
+      <button class="btn-confirm" type="button">ПОДКЛЮЧИТЬСЯ В TELEGRAM</button>
+    </a>
+  </div>
+</section>
+
+<!-- LEGAL -->
+<section id="legal">
+  <div class="info-section">
+    <span style="font-size:9px;color:var(--accent);letter-spacing:0.3em;">03 / ЮРИДИКА</span>
+    <h2 style="margin-top:12px;">ДОГОВОР<br><em>ДАРЕНИЯ</em></h2>
+    <p>Донаты оформляются как дарение между физлицами. По ст. 217 НК РФ — 0% НДФЛ. Статус ИП или самозанятого не требуется.</p>
+    <div class="steps-list">
+      <div class="step-row"><div class="step-num">①</div><div class="step-content"><h4>Донатер отправляет</h4><p>Через QR или ссылку. Без регистрации.</p></div></div>
+      <div class="step-row"><div class="step-num">②</div><div class="step-content"><h4>Донат в кабинете</h4><p>Приходит в личный кабинет автора.</p></div></div>
+      <div class="step-row"><div class="step-num">③</div><div class="step-content"><h4>Вывод на карту</h4><p>Через Т-Банк, за минуты. Налог: 0%.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq-section">
+  <div class="info-section">
+    <span style="font-size:9px;color:var(--accent);letter-spacing:0.3em;">04 / ВОПРОСЫ</span>
+    <h2 style="margin-top:12px;">FAQ</h2>
+    <div class="faq-list">
+      <div class="faq-item"><button class="faq-q">Есть ли отзывы? <span class="chev">▼</span></button><div class="faq-a"><p>Мы на стадии альфы, собираем первую волну авторов. Сейчас можно подключиться в числе первых.</p></div></div>
+      <div class="faq-item"><button class="faq-q">Почему такая низкая комиссия? <span class="chev">▼</span></button><div class="faq-a"><p>Мы хотели сделать сервис доступным авторам из разных ниш. Комиссия комфортная, чтобы донаты были рабочим инструментом.</p></div></div>
+      <div class="faq-item"><button class="faq-q">У меня Boosty — нужно отключаться? <span class="chev">▼</span></button><div class="faq-a"><p>Нет. Uppora работает параллельно. Ничего отключать не нужно.</p></div></div>
+      <div class="faq-item"><button class="faq-q">Зачем ещё один сервис донатов? <span class="chev">▼</span></button><div class="faq-a"><p>Не все готовы оформлять подписку. Часто человек хочет поддержать один раз. Для этого Uppora.</p></div></div>
+      <div class="faq-item"><button class="faq-q">На чём зарабатывает Uppora? <span class="chev">▼</span></button><div class="faq-a"><p>15 ₽ с каждой тысячи (1,5%). Ещё 30 ₽ (3%) — банку. Итого 4,5%. Без подписок и скрытых сборов.</p></div></div>
+      <div class="faq-item"><button class="faq-q">А что с налогами? <span class="chev">▼</span></button><div class="faq-a"><p>Договор дарения. Ст. 217 НК РФ — 0% НДФЛ. ИП/самозанятость не нужны.</p></div></div>
+      <div class="faq-item"><button class="faq-q">Как выглядит страница автора? <span class="chev">▼</span></button><div class="faq-a"><p>Донатер переходит по ссылке, вводит сумму — и всё:</p><div style="display:flex;gap:12px;margin:12px 0;"><img src="assets/author-page-murchalnya.jpg" alt="Мурчальня" style="width:120px;border-radius:8px;border:1px solid var(--border);" loading="lazy"><img src="assets/author-page-dasha.jpg" alt="Даша" style="width:120px;border-radius:8px;border:1px solid var(--border);" loading="lazy"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="road-footer">
+  <h3>СПАСИБО ЗА ПУТЬ</h3>
+  <a href="https://t.me/uppora_support" target="_blank" rel="noopener">ПОДКЛЮЧИТЬСЯ В TELEGRAM →</a>
+  <p>UPPORA // ALPHA // 2026</p>
+</div>
+
+<script>
+  // === THREE.JS ROAD ===
+  const canvas = document.getElementById('road-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 5; camera.position.y = 1;
+
+  const roadGeo = new THREE.PlaneGeometry(10, 200, 50, 50);
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0x111111, wireframe: true, transparent: true, opacity: 0.25 });
+  const road = new THREE.Mesh(roadGeo, roadMat);
+  road.rotation.x = -Math.PI / 2;
+  scene.add(road);
+
+  const markers = [];
+  for (let i = 0; i < 30; i++) {
+    const geo = new THREE.BoxGeometry(0.1, 0.1, 2);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x52B868 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set((Math.random()-0.5)*15, Math.random()*2, -Math.random()*100);
+    scene.add(mesh); markers.push(mesh);
+  }
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const ptLight = new THREE.PointLight(0x52B868, 2);
+  ptLight.position.set(0, 5, -5); scene.add(ptLight);
+
+  function animate() {
+    requestAnimationFrame(animate);
+    road.position.z = (window.scrollY * 0.01) % 10;
+    markers.forEach(m => { m.position.z += 0.08; if (m.position.z > 5) m.position.z = -95; });
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // === DIAL ===
+  const dial = document.getElementById('dial');
+  const amountVal = document.getElementById('amount-val');
+  const bdA = document.getElementById('bd-author'), bdB = document.getElementById('bd-bank');
+  const bdU = document.getElementById('bd-uppora'), bdT = document.getElementById('bd-total');
+  const bars = [];
+  for (let i = 0; i < 20; i++) {
+    const b = document.createElement('div'); b.className = 'bar';
+    b.style.height = `${(i/20)*100+10}%`; dial.appendChild(b); bars.push(b);
+  }
+  function fmt(n) { return n.toLocaleString('ru-RU'); }
+  function updateDial(pct) {
+    const ai = Math.floor(pct * 20);
+    bars.forEach((b,i) => b.classList.toggle('active', i <= ai));
+    const v = Math.floor(pct * 9900) + 100;
+    const bank = Math.round(v*0.03), up = Math.round(v*0.015), auth = v-bank-up;
+    amountVal.innerText = fmt(v);
+    bdA.innerText = fmt(auth)+' ₽'; bdB.innerText = fmt(bank)+' ₽';
+    bdU.innerText = fmt(up)+' ₽'; bdT.innerText = fmt(v)+' ₽';
+  }
+
+  // === GSAP ===
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.to(camera.position, { z:2, y:0.5, scrollTrigger:{ trigger:"body", start:"top top", end:"bottom bottom", scrub:1 }});
+  gsap.to(".hero-title span", { x:50, scrollTrigger:{ trigger:"#hero", start:"top top", end:"bottom top", scrub:true }});
+  ScrollTrigger.create({ trigger:"#gratitude", start:"top bottom", end:"bottom bottom", onUpdate:(s) => updateDial(s.progress) });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // FAQ
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.parentElement;
+      const open = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+      if (!open) item.classList.add('open');
+    });
+  });
+
+  // Nav scroll
+  document.querySelectorAll('.nav-item').forEach(a => {
+    a.addEventListener('click', (e) => {
+      const h = a.getAttribute('href');
+      if (h.startsWith('#')) { e.preventDefault(); document.querySelector(h)?.scrollIntoView({behavior:'smooth'});
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); a.classList.add('active');
+      }
+    });
+  });
+
+  updateDial(0.05);
+</script>
+
+</body>
+</html>
