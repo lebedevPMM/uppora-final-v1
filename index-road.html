@@ -137,6 +137,63 @@
     .road-footer p { font-size: 9px; margin-top: 16px; color: var(--dim); letter-spacing: 0.2em; }
     .road-footer a { color: var(--accent); text-decoration: none; font-size: 10px; margin-top: 12px; display: inline-block; letter-spacing: 0.15em; }
 
+    /* === DESKTOP ADAPTATION === */
+    @media (min-width: 768px) {
+      section { padding: 60px 10vw; align-items: center; }
+      section > * { max-width: 900px; width: 100%; }
+
+      .hero-title { font-size: clamp(4rem, 8vw, 7rem); }
+      .description { max-width: 480px; font-size: 14px; }
+
+      .stats-row { gap: 60px; }
+      .stat-value { font-size: 36px; }
+      .stat-label { font-size: 10px; }
+
+      .info-section { max-width: 700px; }
+      .info-section h2 { font-size: clamp(2.5rem, 5vw, 3.5rem); }
+      .info-section p { font-size: 14px; }
+      .step-content h4 { font-size: 15px; }
+      .step-content p { font-size: 13px; }
+      .step-num { font-size: 28px; }
+
+      .dash-module { max-width: 600px; padding: 40px; margin-top: 30vh; }
+      .dial-container { height: 260px; }
+      .amount-display { font-size: 56px; }
+      .breakdown-row { font-size: 13px; }
+
+      .faq-list { max-width: 700px; }
+      .faq-q { font-size: 13px; padding: 20px 0; }
+      .faq-a p { font-size: 13px; }
+
+      .founder-block { gap: 24px; }
+      .founder-photo { width: 100px; height: 100px; }
+
+      .rearview-nav { width: 360px; height: 54px; }
+      .nav-item { font-size: 11px; }
+
+      .corner-label { font-size: 10px; }
+
+      .road-footer h3 { font-size: 32px; }
+      .road-footer a { font-size: 12px; }
+    }
+
+    @media (min-width: 1200px) {
+      section { padding: 80px 15vw; }
+
+      .hero-title { font-size: 7rem; }
+      .description { max-width: 540px; font-size: 15px; line-height: 1.8; }
+
+      .steps-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+      .step-row { flex-direction: column; border-bottom: none; border-right: 1px solid var(--border); padding: 20px 20px 20px 0; }
+      .step-row:last-child { border-right: none; }
+
+      .dash-module { max-width: 700px; padding: 48px; }
+
+      .info-section { max-width: 800px; }
+
+      .road-footer h3 { font-size: 40px; }
+    }
+
     @media (prefers-reduced-motion: reduce) { .scanlines { display: none; } body { height: auto; } }
   </style>
 </head>
