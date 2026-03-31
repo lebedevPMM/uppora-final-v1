@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uppora — Платформа благодарности</title>
+  <meta name="description" content="Платформа QR-донатов для авторов. Комиссия 4,5%. Без регистрации для донатеров.">
+  <meta property="og:title" content="Uppora — QR-донаты для авторов">
+  <meta property="og:description" content="96% суммы — автору. Без подписок, без паспорта, без регистрации для донатера.">
+  <meta property="og:image" content="https://lebedevpmm.github.io/uppora-final-v1/assets/founder.jpg">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000000;
+      --text: #FFFFFF;
+      --muted: #8A8A8A;
+      --meta: #555555;
+      --green: #52B868;
+      --green-dim: rgba(82, 184, 104, 0.15);
+      --border: rgba(255,255,255,0.1);
+      --font-display: 'Playfair Display', serif;
+      --font-ui: 'Inter', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --edge: 48px;
+      --max-w: 1440px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden; line-height: 1.5;
+    }
+    h1, h2, h3, .serif { font-family: var(--font-display); font-weight: 400; }
+    .meta {
+      font-family: var(--font-mono); font-size: 0.65rem;
+      text-transform: uppercase; letter-spacing: 0.05em; color: var(--meta);
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* === BG GRID === */
+    .bg-grid {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none; z-index: -1;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 100px 100px; background-position: center;
+      mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+      -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+    }
+
+    /* === HEADER === */
+    .site-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 40px var(--edge); position: fixed; top: 0; width: 100%;
+      z-index: 100; mix-blend-mode: difference;
+    }
+    .logo { font-size: 1rem; font-weight: 500; letter-spacing: -0.02em; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { font-size: 0.8rem; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--muted); }
+    .sys-label { position: absolute; top: 120px; right: var(--edge); text-align: right; }
+
+    main { padding-top: 160px; }
+
+    /* === HERO === */
+    .hero { text-align: center; padding: 60px 24px 120px; position: relative; }
+    .hero-heading {
+      font-size: clamp(3.5rem, 8vw, 7rem); line-height: 1.05;
+      margin-bottom: 24px; letter-spacing: -0.03em;
+      max-width: 800px; margin-inline: auto;
+    }
+    .hero-heading em { font-style: italic; color: var(--green); }
+    .hero-sub {
+      font-size: 1.125rem; color: var(--muted); max-width: 440px;
+      margin-inline: auto; font-weight: 300;
+    }
+
+    /* === SPATIAL STAGE (5 cards) === */
+    .spatial-stage {
+      perspective: 1500px; width: 100%; height: 70vh;
+      display: flex; justify-content: center; align-items: center;
+      position: relative; margin-bottom: 120px; overflow: hidden;
+    }
+    .gallery-track {
+      display: flex; justify-content: center; align-items: center;
+      transform-style: preserve-3d; position: relative; width: 100%;
+    }
+    .spatial-card {
+      position: absolute; width: 320px; height: 480px; border-radius: 24px;
+      background-size: cover; background-position: center;
+      display: flex; align-items: flex-end; padding: 32px; overflow: hidden;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+      transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .spatial-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 60%);
+      z-index: 1;
+    }
+    .card-content { position: relative; z-index: 2; width: 100%; }
+    .card-title { font-size: 1.75rem; line-height: 1.1; margin-bottom: 8px; }
+    .card-meta-text { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+
+    .card-1 { transform: translateX(-650px) translateZ(-400px) rotateY(25deg); opacity: 0.3; }
+    .card-2 { transform: translateX(-350px) translateZ(-200px) rotateY(15deg); opacity: 0.7; }
+    .card-3 { transform: translateX(0) translateZ(50px) rotateY(0deg); opacity: 1; z-index: 10; }
+    .card-4 { transform: translateX(350px) translateZ(-200px) rotateY(-15deg); opacity: 0.7; }
+    .card-5 { transform: translateX(650px) translateZ(-400px) rotateY(-25deg); opacity: 0.3; }
+
+    /* Placeholder for images */
+    .img-placeholder {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 10px; color: var(--meta);
+      text-align: center; padding: 16px; line-height: 1.4;
+      background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
+    }
+    .spatial-card .img-placeholder {
+      position: absolute; inset: 0; z-index: 0;
+    }
+
+    /* === TRUSTED === */
+    .trusted-section {
+      padding: 60px var(--edge); border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 40px; flex-wrap: wrap;
+    }
+    .trusted-label { font-size: 0.75rem; color: var(--muted); width: 140px; flex-shrink: 0; }
+    .trust-items { display: flex; gap: 48px; flex-wrap: wrap; align-items: center; }
+    .trust-item {
+      font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+
+    /* === SECTION CONTAINER === */
+    .section-container { max-width: var(--max-w); margin: 0 auto; padding: 160px var(--edge); }
+
+    /* === TESTIMONIAL === */
+    .testimonial { text-align: center; max-width: 1000px; margin: 0 auto; }
+    .testimonial blockquote {
+      font-size: clamp(2rem, 5vw, 4rem); line-height: 1.15;
+      letter-spacing: -0.02em; margin-bottom: 40px;
+    }
+    .author-info { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .author-name { font-size: 0.875rem; letter-spacing: 0.05em; text-transform: uppercase; }
+    .author-role { font-size: 0.75rem; color: var(--muted); }
+
+    /* === WORKFLOW === */
+    .workflow-header {
+      margin-bottom: 100px; display: flex; justify-content: space-between;
+      align-items: flex-end; flex-wrap: wrap; gap: 24px;
+    }
+    .workflow-header h2 { font-size: clamp(2rem, 4vw, 3rem); }
+    .workflow-list { display: flex; flex-direction: column; gap: 120px; }
+    .workflow-item { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
+    @media (min-width: 768px) {
+      .workflow-item { grid-template-columns: 1fr 1fr; gap: 80px; }
+      .workflow-item:nth-child(even) { direction: rtl; }
+      .workflow-item:nth-child(even) > * { direction: ltr; }
+    }
+    .workflow-number {
+      font-family: var(--font-display); font-size: clamp(4rem, 8vw, 8rem);
+      line-height: 0.8; color: var(--meta); opacity: 0.3; margin-bottom: 24px;
+    }
+    .workflow-text h3 { font-size: clamp(1.5rem, 3vw, 2.5rem); margin-bottom: 16px; line-height: 1.2; }
+    .workflow-text p { font-size: 1rem; color: var(--muted); max-width: 400px; font-weight: 300; line-height: 1.7; }
+    .workflow-visual {
+      width: 100%; aspect-ratio: 4/5; background: #111; border-radius: 16px;
+      overflow: hidden; position: relative;
+    }
+    .workflow-visual .img-placeholder { border-radius: 16px; }
+    .tools-tags { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .tool-tag {
+      border: 1px solid rgba(255,255,255,0.2); padding: 6px 16px;
+      border-radius: 30px; font-size: 0.75rem; color: var(--muted);
+    }
+
+    /* === BENEFITS === */
+    .benefits-section { border-top: 1px solid var(--border); padding-top: 80px; margin-top: 80px; }
+    .benefits-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media (min-width: 768px) { .benefits-grid { grid-template-columns: 1fr 1fr; gap: 40px; } }
+    .benefit-card {
+      padding: 40px; background: rgba(255,255,255,0.02);
+      border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+    }
+    .benefit-card h3 { font-size: 1.5rem; margin-bottom: 12px; }
+    .benefit-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+    /* === MARQUEE === */
+    .marquee-wrapper {
+      width: 100%; overflow: hidden; padding: 100px 0;
+      background: #050505; position: relative;
+    }
+    .marquee-wrapper::before, .marquee-wrapper::after {
+      content: ''; position: absolute; top: 0; bottom: 0; width: 15vw; z-index: 10;
+    }
+    .marquee-wrapper::before { left: 0; background: linear-gradient(to right, #000, transparent); }
+    .marquee-wrapper::after { right: 0; background: linear-gradient(to left, #000, transparent); }
+    .marquee-content { display: flex; width: fit-content; animation: mscroll 40s linear infinite; }
+    .marquee-item {
+      font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2.5rem);
+      white-space: nowrap; padding: 0 4vw; color: var(--muted);
+      display: flex; align-items: center; gap: 4vw;
+    }
+    .marquee-item span { color: var(--text); }
+    .marquee-sep { width: 8px; height: 8px; background: var(--meta); border-radius: 50%; }
+    @keyframes mscroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+    /* === CALCULATOR === */
+    .calc-section { max-width: 600px; margin: 0 auto; padding: 80px 24px; text-align: center; }
+    .calc-box {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 20px; padding: 48px 40px; margin-top: 40px;
+    }
+    .calc-amount {
+      font-family: 'Playfair Display', serif; font-size: 4rem; color: var(--green);
+      margin: 16px 0;
+    }
+    .calc-amount .currency { font-size: 2rem; color: var(--muted); }
+    .calc-slider {
+      -webkit-appearance: none; width: 100%; height: 2px;
+      background: #222; outline: none; margin: 32px 0;
+    }
+    .calc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+      background: var(--green); cursor: pointer; box-shadow: 0 0 20px rgba(82,184,104,0.4);
+    }
+    .calc-slider::-moz-range-thumb {
+      width: 20px; height: 20px; border: none; border-radius: 50%;
+      background: var(--green); cursor: pointer;
+    }
+    .calc-breakdown { text-align: left; margin-top: 32px; }
+    .calc-row {
+      display: flex; justify-content: space-between; padding: 10px 0;
+      font-size: 0.85rem; color: var(--muted); border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .calc-row:last-child { border-bottom: none; }
+    .calc-row.total { color: var(--green); font-weight: 600; border-top: 1px solid var(--green); margin-top: 8px; padding-top: 16px; border-bottom: none; }
+    .calc-row .val { color: var(--text); }
+    .calc-row.total .val { color: var(--green); }
+
+    .cta-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 18px 40px; background: var(--green); color: #000;
+      font-weight: 600; font-size: 0.9rem; border-radius: 12px;
+      margin-top: 32px; transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(82,184,104,0.3); }
+
+    /* === FAQ === */
+    .faq-list { max-width: 720px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid var(--border); }
+    .faq-q {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 22px 0; font-size: 0.95rem; color: var(--text); text-align: left;
+      cursor: pointer; background: none; border: none;
+      font-family: var(--font-ui); font-weight: 400;
+    }
+    .faq-q:hover { color: var(--green); }
+    .faq-q .chev { font-size: 14px; color: var(--meta); transition: transform 0.3s; }
+    .faq-item.open .chev { transform: rotate(180deg); color: var(--green); }
+    .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+    .faq-item.open .faq-a { max-height: 500px; }
+    .faq-a p { font-size: 0.85rem; color: var(--muted); line-height: 1.7; padding-bottom: 20px; }
+
+    /* === FOOTER === */
+    .site-footer {
+      padding: 60px var(--edge); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+
+    /* === MOBILE === */
+    @media (max-width: 768px) {
+      :root { --edge: 20px; }
+      .site-header { padding: 24px var(--edge); }
+      .nav-links { gap: 16px; }
+      .nav-links a { font-size: 0.7rem; }
+      .sys-label { display: none; }
+      .spatial-stage { height: 50vh; }
+      .card-1, .card-5 { display: none; }
+      .card-2 { transform: translateX(-180px) translateZ(-100px) rotateY(10deg); }
+      .card-4 { transform: translateX(180px) translateZ(-100px) rotateY(-10deg); }
+      .spatial-card { width: 240px; height: 360px; padding: 24px; }
+      .trusted-section { flex-direction: column; gap: 24px; padding: 40px var(--edge); }
+      .section-container { padding: 80px var(--edge); }
+      .workflow-header { flex-direction: column; align-items: flex-start; }
+      .calc-box { padding: 32px 24px; }
+      .calc-amount { font-size: 3rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .marquee-content { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="logo">uppora —</div>
+  <nav class="nav-links">
+    <a href="#how">Как работает</a>
+    <a href="#calc">Калькулятор</a>
+    <a href="#faq-s">FAQ</a>
+    <a href="https://t.me/uppora_support" target="_blank" rel="noopener">Telegram</a>
+  </nav>
+</header>
+
+<div class="sys-label meta" aria-hidden="true">
+  ALPHA // ONLINE<br>
+  COMMISSION: 4.5%
+</div>
+
+<main>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="meta" style="margin-bottom:2rem;">[ Платформа благодарности ]</div>
+  <h1 class="hero-heading serif">96% суммы —<br><em>автору.</em></h1>
+  <p class="hero-sub">QR-донаты без регистрации для донатеров. Комиссия 4,5%. Договор дарения — 0% НДФЛ.</p>
+</section>
+
+<!-- SPATIAL CARDS: 5 use cases -->
+<section class="spatial-stage">
+  <div class="gallery-track">
+
+    <div class="spatial-card card-1">
+      <div class="img-placeholder">IMG_PROMPT_1</div>
+      <div class="card-content">
+        <div class="card-meta-text">Офлайн</div>
+        <h3 class="card-title serif">QR на<br>ярмарке</h3>
+      </div>
+    </div>
+
+    <div class="spatial-card card-2">
+      <div class="img-placeholder">IMG_PROMPT_2</div>
+      <div class="card-content">
+        <div class="card-meta-text">Telegram</div>
+        <h3 class="card-title serif">Ссылка<br>в канале</h3>
+      </div>
+    </div>
+
+    <div class="spatial-card card-3">
+      <div class="img-placeholder">IMG_PROMPT_3</div>
+      <div class="card-content">
+        <div class="card-meta-text">Разовый донат</div>
+        <h3 class="card-title serif">Спасибо<br>в один клик</h3>
+      </div>
+    </div>
+
+    <div class="spatial-card card-4">
+      <div class="img-placeholder">IMG_PROMPT_4</div>
+      <div class="card-content">
+        <div class="card-meta-text">Концерт</div>
+        <h3 class="card-title serif">QR на<br>афише</h3>
+      </div>
+    </div>
+
+    <div class="spatial-card card-5">
+      <div class="img-placeholder">IMG_PROMPT_5</div>
+      <div class="card-content">
+        <div class="card-meta-text">Блог</div>
+        <h3 class="card-title serif">Кнопка<br>на сайте</h3>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="trusted-section">
+  <div class="trusted-label">Юридическая модель</div>
+  <div class="trust-items">
+    <div class="trust-item">Т-Банк</div>
+    <div class="trust-item">Ст. 217 НК РФ</div>
+    <div class="trust-item">0% НДФЛ</div>
+    <div class="trust-item">SSL + PCI DSS</div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL: Founder -->
+<section class="section-container">
+  <div class="testimonial">
+    <div class="meta" style="margin-bottom:2rem;">[ Основатель ]</div>
+    <blockquote class="serif">
+      Я видел, как авторы теряют 20–30% заработанного на комиссиях и налогах. Мы нашли способ делать это иначе.
+    </blockquote>
+    <div class="author-info">
+      <span class="author-name">Илья Панов</span>
+      <span class="author-role">Основатель Uppora</span>
+    </div>
+  </div>
+</section>
+
+<!-- WORKFLOW: How it works -->
+<section class="section-container" id="how">
+  <div class="workflow-header">
+    <div>
+      <div class="meta" style="margin-bottom:1rem;">[ Архитектура ]</div>
+      <h2 class="serif">Три шага.</h2>
+    </div>
+    <div class="meta" style="text-align:right;">SEQ_01 — 03<br>LINEAR</div>
+  </div>
+
+  <div class="workflow-list">
+
+    <div class="workflow-item">
+      <div class="workflow-text">
+        <div class="workflow-number">01</div>
+        <h3 class="serif">Мы создаём страницу.</h3>
+        <p>Только имя и карта для выплат. Без паспорта. Консьерж-онбординг — мы берём создание на себя за 2 минуты.</p>
+        <div class="tools-tags">
+          <span class="tool-tag">QR-код</span>
+          <span class="tool-tag">Ссылка</span>
+          <span class="tool-tag">QR-кит</span>
+        </div>
+      </div>
+      <div class="workflow-visual">
+        <div class="img-placeholder">IMG_PROMPT_6</div>
+        <div class="meta" style="position:absolute;bottom:24px;right:24px;background:rgba(0,0,0,0.5);padding:4px 8px;">STEP_01: CREATE</div>
+      </div>
+    </div>
+
+    <div class="workflow-item">
+      <div class="workflow-text">
+        <div class="workflow-number">02</div>
+        <h3 class="serif">Делитесь ссылкой.</h3>
+        <p>В био, на столе в кофейне, стикер на витрине, QR на афише. Один линк — все площадки.</p>
+      </div>
+      <div class="workflow-visual">
+        <div class="img-placeholder">IMG_PROMPT_7</div>
+      </div>
+    </div>
+
+    <div class="workflow-item">
+      <div class="workflow-text">
+        <div class="workflow-number">03</div>
+        <h3 class="serif">Деньги в кабинете.</h3>
+        <p>Донатер сканирует QR → вводит сумму → готово. Без регистрации. Донат приходит в кабинет, вывод на карту за минуты через Т-Банк.</p>
+      </div>
+      <div class="workflow-visual">
+        <div class="img-placeholder">IMG_PROMPT_8</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BENEFITS -->
+  <div class="benefits-section">
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="meta" style="margin-bottom:1rem;">LEGAL // ст.217</div>
+        <h3 class="serif">0% НДФЛ.</h3>
+        <p>Донаты оформляются как договор дарения между физлицами. По ст. 217 НК РФ — не облагается налогом. ИП и самозанятость не нужны.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="meta" style="margin-bottom:1rem;">PARALLEL // MODE</div>
+        <h3 class="serif">Работает параллельно.</h3>
+        <p>Не нужно отключать Boosty, VK Донаты или DonationAlerts. Uppora — дополнительный канал для разовой поддержки.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECOND TESTIMONIAL -->
+<section class="section-container" style="padding-top:0;">
+  <div class="testimonial">
+    <blockquote class="serif">
+      Не все готовы оформлять подписку. Часто человек хочет просто поддержать один раз, здесь и сейчас. Для этого и создана Uppora.
+    </blockquote>
+    <div class="author-info">
+      <span class="author-name">Uppora Team</span>
+      <span class="author-role">Из ответов менеджера авторам</span>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<section class="marquee-wrapper">
+  <div class="meta" style="position:absolute;top:40px;left:var(--edge);z-index:20;">[ Ключевые факты ]</div>
+  <div class="marquee-content">
+    <div class="marquee-item">
+      "Комиссия 4,5% вместо 10–15%" <span>— Uppora</span>
+      <div class="marquee-sep"></div>
+      "0% НДФЛ — договор дарения" <span>— ст.217 НК РФ</span>
+      <div class="marquee-sep"></div>
+      "Донатеру не нужна регистрация" <span>— QR → сумма → готово</span>
+      <div class="marquee-sep"></div>
+    </div>
+    <div class="marquee-item">
+      "Комиссия 4,5% вместо 10–15%" <span>— Uppora</span>
+      <div class="marquee-sep"></div>
+      "0% НДФЛ — договор дарения" <span>— ст.217 НК РФ</span>
+      <div class="marquee-sep"></div>
+      "Донатеру не нужна регистрация" <span>— QR → сумма → готово</span>
+      <div class="marquee-sep"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CALCULATOR -->
+<section class="calc-section" id="calc">
+  <div class="meta" style="margin-bottom:2rem;">[ Открытая бухгалтерия ]</div>
+  <h2 class="serif" style="font-size:clamp(2rem,4vw,3rem);">Куда уходит каждый рубль.</h2>
+  <div class="calc-box">
+    <div class="meta">FUEL_INJECTION_AMT</div>
+    <div class="calc-amount"><span id="cDisp">1 000</span> <span class="currency">₽</span></div>
+    <input type="range" class="calc-slider" id="cSlider" min="100" max="10000" value="1000" step="100" aria-label="Сумма доната">
+    <div class="calc-breakdown">
+      <div class="calc-row"><span>Автору</span><span class="val" id="cAuthor">955 ₽</span></div>
+      <div class="calc-row"><span>Банку (3%)</span><span class="val" id="cBank">30 ₽</span></div>
+      <div class="calc-row"><span>Uppora (1,5%)</span><span class="val" id="cUppora">15 ₽</span></div>
+      <div class="calc-row total"><span>ИТОГО</span><span class="val" id="cTotal">1 000 ₽</span></div>
+    </div>
+  </div>
+  <a href="https://t.me/uppora_support" class="cta-btn" target="_blank" rel="noopener">
+    Подключиться в Telegram →
+  </a>
+</section>
+
+<!-- FAQ -->
+<section class="section-container" id="faq-s">
+  <div class="meta" style="margin-bottom:2rem;text-align:center;">[ Вопросы ]</div>
+  <h2 class="serif" style="text-align:center;font-size:clamp(2rem,4vw,3rem);margin-bottom:60px;">Частые вопросы.</h2>
+  <div class="faq-list">
+    <div class="faq-item"><button class="faq-q">Есть ли отзывы? <span class="chev">▼</span></button><div class="faq-a"><p>Мы на стадии альфы, собираем первую волну авторов. Сейчас можно подключиться в числе первых и протестировать сервис.</p></div></div>
+    <div class="faq-item"><button class="faq-q">Почему такая низкая комиссия? <span class="chev">▼</span></button><div class="faq-a"><p>Мы хотели сделать сервис доступным авторам из разных ниш. Комиссия комфортная, чтобы донаты были рабочим инструментом, а не съедались сервисом.</p></div></div>
+    <div class="faq-item"><button class="faq-q">У меня Boosty — нужно отключаться? <span class="chev">▼</span></button><div class="faq-a"><p>Нет. Uppora работает параллельно. Ничего отключать не нужно.</p></div></div>
+    <div class="faq-item"><button class="faq-q">Зачем ещё один сервис донатов? <span class="chev">▼</span></button><div class="faq-a"><p>Не все готовы оформлять подписку. Часто человек хочет поддержать один раз. Для этого Uppora.</p></div></div>
+    <div class="faq-item"><button class="faq-q">На чём зарабатывает Uppora? <span class="chev">▼</span></button><div class="faq-a"><p>15 ₽ с каждой тысячи (1,5%). Ещё 30 ₽ (3%) — банку. Итого 4,5%. Без подписок и скрытых сборов.</p></div></div>
+    <div class="faq-item"><button class="faq-q">А что с налогами? <span class="chev">▼</span></button><div class="faq-a"><p>Договор дарения. Ст. 217 НК РФ — 0% НДФЛ. ИП/самозанятость не нужны.</p></div></div>
+    <div class="faq-item">
+      <button class="faq-q">Как выглядит страница автора? <span class="chev">▼</span></button>
+      <div class="faq-a">
+        <p>Донатер переходит по ссылке, вводит сумму — и всё:</p>
+        <div style="display:flex;gap:12px;margin:12px 0;">
+          <img src="assets/author-page-murchalnya.jpg" alt="Мурчальня" style="width:140px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);" loading="lazy">
+          <img src="assets/author-page-dasha.jpg" alt="Даша" style="width:140px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="logo">uppora — 2026</div>
+  <div class="meta">SYSTEM: NOMINAL // ALPHA</div>
+</footer>
+
+<script>
+  // Calculator
+  const sl = document.getElementById('cSlider');
+  const dsp = document.getElementById('cDisp');
+  const cA = document.getElementById('cAuthor'), cB = document.getElementById('cBank');
+  const cU = document.getElementById('cUppora'), cT = document.getElementById('cTotal');
+  function fmt(n) { return n.toLocaleString('ru-RU'); }
+  function upd() {
+    const v = parseInt(sl.value);
+    const bank = Math.round(v*0.03), up = Math.round(v*0.015), auth = v-bank-up;
+    dsp.textContent = fmt(v);
+    cA.textContent = fmt(auth)+' ₽'; cB.textContent = fmt(bank)+' ₽';
+    cU.textContent = fmt(up)+' ₽'; cT.textContent = fmt(v)+' ₽';
+    const pct = ((v-100)/(10000-100))*100;
+    sl.style.background = `linear-gradient(to right, #52B868 ${pct}%, #222 ${pct}%)`;
+  }
+  sl.addEventListener('input', upd); upd();
+
+  // FAQ
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.parentElement;
+      const open = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+      if (!open) item.classList.add('open');
+    });
+  });
+
+  // Smooth scroll nav
+  document.querySelectorAll('.nav-links a[href^="#"]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior:'smooth'});
+    });
+  });
+</script>
+
+</body>
+</html>
