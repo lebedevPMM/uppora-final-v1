@@ -1189,19 +1189,44 @@
   const pts = new THREE.Points(pGeo, pMat);
   grp.add(pts);
 
-  // Wireframe structure
-  const cylGeo = new THREE.CylinderGeometry(1, 1.5, 6, 8, 12, true);
-  const cylMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.06 });
-  grp.add(new THREE.Mesh(cylGeo, cylMat));
+  // Wireframe coin (flat cylinder)
+  const coinGeo = new THREE.CylinderGeometry(2.5, 2.5, 0.3, 32, 4, false);
+  const coinMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.06 });
+  const coin = new THREE.Mesh(coinGeo, coinMat);
+  coin.rotation.x = Math.PI / 2; // face the camera
+  grp.add(coin);
+
+  // Coin rim — torus around the edge
+  const rimGeo = new THREE.TorusGeometry(2.5, 0.15, 8, 32);
+  const rimMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.08 });
+  const rim = new THREE.Mesh(rimGeo, rimMat);
+  grp.add(rim);
+
+  // Inner coin detail rings (embossed look)
+  const innerMat = new THREE.MeshBasicMaterial({ color: 0x52B868, transparent: true, opacity: 0.15 });
+  const innerRing1 = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.01, 8, 48), innerMat);
+  grp.add(innerRing1);
+  const innerRing2 = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.01, 8, 48), innerMat.clone());
+  innerRing2.material.opacity = 0.1;
+  grp.add(innerRing2);
+
+  // Center symbol — wireframe octahedron
+  const centerGeo = new THREE.OctahedronGeometry(0.4, 0);
+  const centerMat = new THREE.MeshBasicMaterial({ color: 0x52B868, wireframe: true, transparent: true, opacity: 0.2 });
+  const centerSym = new THREE.Mesh(centerGeo, centerMat);
+  grp.add(centerSym);
 
   // Orbital rings
-  const rGeo = new THREE.TorusGeometry(3, 0.01, 16, 100);
-  const rMat = new THREE.MeshBasicMaterial({ color: 0x52B868, transparent: true, opacity: 0.2 });
+  const rGeo = new THREE.TorusGeometry(3.5, 0.01, 16, 100);
+  const rMat = new THREE.MeshBasicMaterial({ color: 0x52B868, transparent: true, opacity: 0.15 });
   const r1 = new THREE.Mesh(rGeo, rMat);
-  r1.rotation.x = Math.PI / 2;
+  r1.rotation.x = Math.PI / 3;
+  r1.rotation.z = Math.PI / 6;
   grp.add(r1);
-  const r2 = new THREE.Mesh(rGeo, rMat);
-  r2.rotation.y = Math.PI / 2;
+  const r2 = new THREE.Mesh(rGeo.clone(), rMat.clone());
+  r2.material.opacity = 0.1;
+  r2.rotation.x = -Math.PI / 4;
+  r2.rotation.z = -Math.PI / 5;
   grp.add(r2);
 
   cam.position.z = 8;
@@ -1212,6 +1237,8 @@
     requestAnimationFrame(anim3d);
     grp.rotation.y += 0.0015;
     pts.rotation.y -= 0.0008;
+    centerSym.rotation.y += 0.005;
+    centerSym.rotation.x += 0.003;
     ren.render(scene3d, cam);
   }
   anim3d();
